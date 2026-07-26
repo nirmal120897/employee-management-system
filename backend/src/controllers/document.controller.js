@@ -169,9 +169,21 @@ export const chunkDocument = async (req, res) => {
     }
 
     const result = await saveDocumentChunksService(id, chunks);
-
+    // DB se saved chunks lao (ab inke paas id hogi)
+    const savedChunks = await getDocumentChunksService(id);
+    let embedded = 0;
+    for (const chunk of savedChunks) {
+      const embedding = await generateEmbedding(chunk.content);
+      await storeChunkEmbeddingService(chunk.id, embedding);
+      embedded++;
+    }
+   
     console.log(
       `[chunkDocument] document ${id} chunked into ${result.totalChunks} pieces`,
+    );
+
+     console.log(
+      `[embedDocument] embedded ${embedded}/${savedChunks.length} chunks for document ${id}`,
     );
 
     return res.status(201).json({
