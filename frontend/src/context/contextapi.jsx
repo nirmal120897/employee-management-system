@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { meApi } from "../api/authapi.js";
+import { ShowGlobalLoader } from "./loadingContext.jsx";
+// import GlobalLoader from "../components/GlobalLoader.jsx";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -15,11 +17,9 @@ export const AuthProvider = ({ children }) => {
     }
     try {
       const res = await meApi();
-      console.log(">>>>res", res);
-
       setUser(res.data.data); // { id, name, email, role, managerId, createdAt }
     } catch (error) {
-      console.log(">>>AuthContext fetchUser error", error);
+      console.log(" ..error", error);
       setUser(null);
       localStorage.removeItem("token");
     } finally {
@@ -40,7 +40,9 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  if (loading) return <h1>loding...</h1>;
+  if (loading) {
+    return <ShowGlobalLoader />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, fetchUser, logout }}>

@@ -135,7 +135,7 @@ function Users() {
   };
 
   if (!users || !Managers) {
-    return <h1>:Loading....</h1>;
+    return <h2>data loading.....</h2>;
   }
 
   return (

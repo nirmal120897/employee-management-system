@@ -54,8 +54,6 @@ axios.interceptors.response.use(
         data?.message === "Token expired" ||
         data?.message === "Invalid token";
 
-      // Auth routes khud (login/register/refresh) pe 401 aaye toh retry mat karo,
-      // seedha reject kar do - warna infinite loop ban jayega.
       if (
         isAuthError &&
         !authRoutes.includes(originalRequest.url) &&
@@ -69,7 +67,6 @@ axios.interceptors.response.use(
         }
 
         if (isRefreshing) {
-          // Ek refresh already chal raha hai - is request ko queue mein daal do
           return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           }).then((newToken) => {
@@ -103,10 +100,9 @@ axios.interceptors.response.use(
         }
       }
 
-      // Auth route pe hi 401 aaya (galat login credentials waghera) - seedha login pe bhejo
-      if (isAuthError && authRoutes.includes(originalRequest.url)) {
-        logoutAndRedirect();
-      }
+      // if (isAuthError && authRoutes.includes(originalRequest.url)) {
+      //   logoutAndRedirect();
+      // }
     }
 
     return Promise.reject(error);

@@ -73,7 +73,7 @@ function Staff() {
     setError("");
     setSubmitting(true);
     try {
-      await createUserApi(formData);
+      await createUserApi({ ...formData, managerId: user?.id });
       setFormData({ name: "", email: "", password: "", role: "MANAGER" });
       fetchStaff();
     } catch (err) {
