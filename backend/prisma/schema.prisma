@@ -1,0 +1,118 @@
+// ============================================
+// Prisma Schema - Staff Attendance + RAG System
+// ============================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ---------- ENUMS ----------
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  PARSED
+  FAILED
+}
+
+// ---------- USER + AUTH ----------
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       Role     @default(STAFF)
+
+  // Manager who this staff/manager reports to (self-relation)
+  managerId  String?
+  manager    User?    @relation("ManagerToStaff", fields: [managerId], references: [id])
+  staff      User[]   @relation("ManagerToStaff")
+
+  attendance Attendance[]
+  documents  Document[]      @relation("UploadedBy")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ---------- ATTENDANCE ----------
+
+model Attendance {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  checkIn       DateTime
+  checkOut      DateTime?
+  workingHours  Float?    // auto-calculated on checkout
+  overtimeHours Float?    // auto-calculated (hours beyond 8)
+  date          DateTime  @default(now()) // date-only marker for "no double check-in per day"
+
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, date])
+  @@map("attendance")
+}
+
+// ---------- RAG: DOCUMENTS ----------
+
+model Document {
+  id         String          @id @default(uuid())
+  title      String
+  fileName   String
+  uploadedBy String
+  uploader   User            @relation("UploadedBy", fields: [uploadedBy], references: [id])
+  status     DocumentStatus  @default(PENDING)
+  chunks     DocumentChunk[]
+  createdAt  DateTime        @default(now())
+
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  content    String   @db.Text
+  chunkIndex Int
+
+  // pgvector column - OpenAI text-embedding-3-small = 1536 dims
+  embedding Unsupported("vector")?
+
+  createdAt  DateTime @default(now())
+
+  @@map("document_chunks")
+}
+
+// ---------- PART F: SEMANTIC EMPLOYEE SEARCH ----------
+
+model EmployeeProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  name       String
+  skills     String[] // Postgres text array
+  department String
+  experience String
+  embedding Unsupported("vector")?
+
+
+  createdAt  DateTime @default(now())
+
+  @@map("employee_profiles")
+}
