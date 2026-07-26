@@ -246,7 +246,8 @@ export const askQuestion = async (req, res) => {
 
     const questionEmbedding = await generateEmbedding(question);
     const matches = await searchSimilarChunksService(questionEmbedding, 5);
-
+    console.log(">>>>>matches",matches);
+    
     if (matches.length === 0) {
       return res.status(200).json({
         error: false,
